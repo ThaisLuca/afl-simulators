@@ -18,7 +18,7 @@ class CifarClient_Server(fl.client.NumPyClient):
 
   def __init__(self):
     # Load model and data
-    print('Client %s starting' % str(random.randint(100,200)))
+    print('Client Server %s starting' % str(random.randint(100,200)))
     self.net = Net().to(DEVICE)
     self.trainloader, self.testloader, self.num_examples = self.load_data()
 
@@ -79,5 +79,7 @@ class CifarClient_Server(fl.client.NumPyClient):
     return loss, accuracy
 
 fl.server.start_server(server_address="[::]:5566",config={"num_rounds": 3})
+
+fl.client.start_numpy_client("127.0.0.1:5566", client=CifarClient_Server())
 
 fl.client.start_numpy_client("127.0.0.1:5566", client=CifarClient_Server())
