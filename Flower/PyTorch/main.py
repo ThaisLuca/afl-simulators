@@ -12,7 +12,7 @@ fl.server.start_server(server_address="[::]:4466",config={"num_rounds": 3})
 # nas mensagens e em criar mais de um servidor, por exemplo.
 
 # Cliente 1
-fl.client.start_numpy_client("127.0.0.1:4466", client=CifarClient())
+fl.client.start_numpy_client("127.0.0.1:8080", client=CifarClient_Server())
 
 # Cliente 2
 fl.client.start_numpy_client("127.0.0.1:4466", client=CifarClient())

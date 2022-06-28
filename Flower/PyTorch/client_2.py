@@ -10,15 +10,15 @@ from torchvision.datasets import CIFAR10
 from network import Net
 
 import flwr as fl
-import random
+import random 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class CifarClient(fl.client.NumPyClient):
+class CifarClient_Server(fl.client.NumPyClient):
 
   def __init__(self):
-    print('Client %s starting' % str(random.randint(100,200)))
     # Load model and data
+    print('Client %s starting' % str(random.randint(100,200)))
     self.net = Net().to(DEVICE)
     self.trainloader, self.testloader, self.num_examples = self.load_data()
 
@@ -78,4 +78,6 @@ class CifarClient(fl.client.NumPyClient):
     accuracy = correct / total
     return loss, accuracy
 
-fl.client.start_numpy_client("127.0.0.1:4466", client=CifarClient())
+fl.server.start_server(server_address="[::]:5566",config={"num_rounds": 3})
+
+fl.client.start_numpy_client("127.0.0.1:5566", client=CifarClient_Server())
