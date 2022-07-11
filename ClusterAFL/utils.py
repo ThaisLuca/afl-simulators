@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.datasets import fetch_openml, load_digits
 from sklearn.linear_model import LogisticRegression
 import openml
+import math
 
 XY = Tuple[np.ndarray, np.ndarray]
 Dataset = Tuple[XY, XY]
@@ -28,7 +29,6 @@ def set_model_params(
         model.intercept_ = params[1]
     return model
 
-
 def set_initial_params(model: LogisticRegression):
     """Sets initial parameters as zeros Required since model params are
     uninitialized until model.fit is called.
@@ -37,7 +37,7 @@ def set_initial_params(model: LogisticRegression):
     information.
     """
     n_classes = 10  # MNIST has 10 classes
-    n_features = 784  # Number of features in dataset
+    n_features = 64  # Number of features in dataset
     model.classes_ = np.array([i for i in range(10)])
 
     model.coef_ = np.zeros((n_classes, n_features))
@@ -54,9 +54,11 @@ def load_mnist() -> Dataset:
     #Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
     #X = Xy[:, :-1]  # the last column contains labels
     #y = Xy[:, -1]
-    # First 60000 samples consist of the train set
-    x_train, y_train = X[:60000], y[:60000]
-    x_test, y_test = X[60000:], y[60000:]
+    
+    # 70% of examples for training and 30% for testing
+    size = math.floor(len(X)*0.7)
+    x_train, y_train = X[:size], y[:size]
+    x_test, y_test = X[size:], y[size:]
     return (x_train, y_train), (x_test, y_test)
 
 
