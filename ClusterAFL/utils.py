@@ -1,5 +1,6 @@
 from typing import Tuple, Union, List
 import numpy as np
+from sklearn.datasets import fetch_openml, load_digits
 from sklearn.linear_model import LogisticRegression
 import openml
 
@@ -48,13 +49,16 @@ def load_mnist() -> Dataset:
     """Loads the MNIST dataset using OpenML.
     OpenML dataset link: https://www.openml.org/d/554
     """
-    mnist_openml = openml.datasets.get_dataset(554)
-    Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
-    X = Xy[:, :-1]  # the last column contains labels
-    y = Xy[:, -1]
+    print('Loading MNIST dataset')
+    #mnist_openml = fetch_openml('mnist_784', version=1, return_X_y=True)
+    X,y = load_digits(return_X_y=True)
+    #Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
+    #X = Xy[:, :-1]  # the last column contains labels
+    #y = Xy[:, -1]
     # First 60000 samples consist of the train set
     x_train, y_train = X[:60000], y[:60000]
     x_test, y_test = X[60000:], y[60000:]
+    print('Finish loadidng dataset')
     return (x_train, y_train), (x_test, y_test)
 
 
