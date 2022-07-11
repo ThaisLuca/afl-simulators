@@ -37,7 +37,7 @@ def set_initial_params(model: LogisticRegression):
     information.
     """
     n_classes = 10  # MNIST has 10 classes
-    n_features = 64  # Number of features in dataset
+    n_features = 784  # Number of features in dataset
     model.classes_ = np.array([i for i in range(10)])
 
     model.coef_ = np.zeros((n_classes, n_features))
@@ -49,16 +49,16 @@ def load_mnist() -> Dataset:
     """Loads the MNIST dataset using OpenML.
     OpenML dataset link: https://www.openml.org/d/554
     """
-    #mnist_openml = fetch_openml('mnist_784', version=1, return_X_y=True)
-    X,y = load_digits(return_X_y=True)
-    #Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
-    #X = Xy[:, :-1]  # the last column contains labels
-    #y = Xy[:, -1]
     
-    # 70% of examples for training and 30% for testing
-    size = math.floor(len(X)*0.7)
-    x_train, y_train = X[:size], y[:size]
-    x_test, y_test = X[size:], y[size:]
+    #X,y = fetch_openml('mnist_784', version=1, return_X_y=True)
+    mnist_openml = openml.datasets.get_dataset(554)
+    Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
+    X = Xy[:, :-1]  # the last column contains labels
+    y = Xy[:, -1]
+    
+    # First 60000 samples consist of the train set
+    x_train, y_train = X[:60000], y[:60000]
+    x_test, y_test = X[60000:], y[60000:]
     return (x_train, y_train), (x_test, y_test)
 
 
