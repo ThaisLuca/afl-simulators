@@ -49,7 +49,6 @@ def load_mnist() -> Dataset:
     """Loads the MNIST dataset using OpenML.
     OpenML dataset link: https://www.openml.org/d/554
     """
-    print('Loading MNIST dataset')
     #mnist_openml = fetch_openml('mnist_784', version=1, return_X_y=True)
     X,y = load_digits(return_X_y=True)
     #Xy, _, _, _ = mnist_openml.get_data(dataset_format="array")
@@ -58,7 +57,6 @@ def load_mnist() -> Dataset:
     # First 60000 samples consist of the train set
     x_train, y_train = X[:60000], y[:60000]
     x_test, y_test = X[60000:], y[60000:]
-    print('Finish loadidng dataset')
     return (x_train, y_train), (x_test, y_test)
 
 
