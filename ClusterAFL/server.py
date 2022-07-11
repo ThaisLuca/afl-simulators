@@ -1,8 +1,8 @@
 import flwr as fl
+import utils
 from typing import Dict
 from sklearn.metrics import log_loss
 from sklearn.linear_model import LogisticRegression
-from utils import set_initial_params, load_mnist, set_model_params
 
 def fit_round(rnd: int) -> Dict:
     """Send round number to client."""
