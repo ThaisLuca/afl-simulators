@@ -8,7 +8,7 @@ from sklearn.metrics import log_loss
 from sklearn.linear_model import LogisticRegression
 
 NUM_CLIENTS = 3
-NUM_ROUNDS = 5
+NUM_ROUNDS = 3
 MIN_AVAILABLE_CLIENTS = 2
 
 def fit_round(rnd: int) -> Dict:
