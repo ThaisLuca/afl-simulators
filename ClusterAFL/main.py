@@ -5,6 +5,7 @@ import numpy as np
 from typing import Dict
 from client import MnistClient
 from sklearn.metrics import log_loss
+from strategy import HalfOfWeightsStrategy
 from sklearn.linear_model import LogisticRegression
 
 NUM_CLIENTS = 3
@@ -54,7 +55,7 @@ def client_fn(cid: str) -> fl.client.Client:
 if __name__ == "__main__":
     model = LogisticRegression()
     utils.set_initial_params(model)
-    strategy = fl.server.strategy.FedAvg(
+    strategy = HalfOfWeightsStrategy(
         min_available_clients=MIN_AVAILABLE_CLIENTS,
         eval_fn=get_eval_fn(model),
         on_fit_config_fn=fit_round,
