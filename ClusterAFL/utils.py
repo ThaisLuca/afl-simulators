@@ -10,7 +10,6 @@ Dataset = Tuple[XY, XY]
 LogRegParams = Union[XY, Tuple[np.ndarray]]
 XYList = List[XY]
 
-
 def get_model_parameters(model: LogisticRegression) -> LogRegParams:
     """Returns the paramters of a sklearn LogisticRegression model."""
     if model.fit_intercept:
@@ -20,9 +19,7 @@ def get_model_parameters(model: LogisticRegression) -> LogRegParams:
     return params
 
 
-def set_model_params(
-    model: LogisticRegression, params: LogRegParams
-) -> LogisticRegression:
+def set_model_params(model: LogisticRegression, params: LogRegParams) -> LogisticRegression:
     """Sets the parameters of a sklean LogisticRegression model."""
     model.coef_ = params[0]
     if model.fit_intercept:
@@ -71,6 +68,4 @@ def shuffle(X: np.ndarray, y: np.ndarray) -> XY:
 
 def partition(X: np.ndarray, y: np.ndarray, num_partitions: int) -> XYList:
     """Split X and y into a number of partitions."""
-    return list(
-        zip(np.array_split(X, num_partitions), np.array_split(y, num_partitions))
-    )
+    return list(zip(np.array_split(X, num_partitions), np.array_split(y, num_partitions)))
