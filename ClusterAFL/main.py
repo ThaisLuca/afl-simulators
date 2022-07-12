@@ -5,7 +5,7 @@ import math
 import utils
 import numpy as np
 from typing import Dict
-from client import MnistClient
+from client import FlowerClient
 from sklearn.metrics import log_loss
 from strategy import HalfOfWeightsStrategy
 from sklearn.linear_model import LogisticRegression
@@ -18,16 +18,15 @@ import tensorflow as tf
 
 NUM_CLIENTS = 10
 NUM_ROUNDS = 3
-MIN_AVAILABLE_CLIENTS = int(NUM_CLIENTS * 0.75)   # Wait until at least 75 clients are available
-FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
-MIN_FIT_CLIENTS = 10                              # Never sample less than 10 clients for training
-FRACTION_EVAL = 0.05                              # Sample 5% of available clients for evaluation
-MIN_EVAL_CLIENTS = 5                              # Never sample less than 5 clients for evaluation
+MIN_AVAILABLE_CLIENTS = 2 # int(NUM_CLIENTS * 0.75)# Wait until at least 75 clients are available
+#FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
+#MIN_FIT_CLIENTS = 10                              # Never sample less than 10 clients for training
+#FRACTION_EVAL = 0.05                              # Sample 5% of available clients for evaluation
+#MIN_EVAL_CLIENTS = 5                              # Never sample less than 5 clients for evaluation
 
 def fit_round(rnd: int) -> Dict:
     """Send round number to client."""
     return {"rnd": rnd}
-
 
 def get_eval_fn(model: LogisticRegression):
     """Return an evaluation function for server-side evaluation."""
@@ -45,40 +44,29 @@ def get_eval_fn(model: LogisticRegression):
 def client_fn(cid: str) -> fl.client.Client:
 
     # Create model
-    model = tf.keras.models.Sequential(
-        [
-            tf.keras.layers.Flatten(input_shape=(28, 28)),
-            tf.keras.layers.Dense(128, activation="relu"),
-            tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(10, activation="softmax"),
-        ]
-    )
-    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Dense(12, input_shape=(8,), activation='relu'))
+    model.add(tf.keras.layers.Dense(8, activation='relu'))
+    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+    
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
     # Load data partition (divide MNIST into NUM_CLIENTS distinct partitions)
-    (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
-    partition_size = math.floor(len(x_train) / NUM_CLIENTS)
-    idx_from, idx_to = int(cid) * partition_size, (int(cid) + 1) * partition_size
-    x_train_cid = x_train[idx_from:idx_to] / 255.0
-    y_train_cid = y_train[idx_from:idx_to]
-
-    # Use 10% of the client's training data for validation
-    split_idx = math.floor(len(x_train) * 0.9)
-    x_train_cid, y_train_cid = x_train_cid[:split_idx], y_train_cid[:split_idx]
-    x_val_cid, y_val_cid = x_train_cid[split_idx:], y_train_cid[split_idx:]
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
     # Create and return client
-    return MnistClient(model, x_train_cid, y_train_cid, x_val_cid, y_val_cid)
+    return FlowerClient(model, x_train, y_train, x_test, y_test)
 
 # Start Flower server for five rounds of federated learning
 if __name__ == "__main__":
     model = LogisticRegression()
     utils.set_initial_params(model)
-    strategy = HalfOfWeightsStrategy(fraction_fit=FRACTION_FIT,
-        fraction_eval=FRACTION_EVAL,
-        min_fit_clients=MIN_FIT_CLIENTS,
-        min_eval_clients=MIN_EVAL_CLIENTS,
-        min_available_clients=MIN_AVAILABLE_CLIENTS
+    strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
+        on_fit_config_fn=fit_round,
+        #fraction_fit=FRACTION_FIT,
+        #fraction_eval=FRACTION_EVAL,
+        #min_fit_clients=MIN_FIT_CLIENTS,
+        #min_eval_clients=MIN_EVAL_CLIENTS,
     )
 
     # Start simulation

@@ -25,24 +25,25 @@ from flwr.server.client_proxy import ClientProxy
 
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self,fraction_fit,fraction_eval,min_fit_clients,min_eval_clients,min_available_clients):
+    def __init__(self,min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
 
-        super().__init__(fraction_fit=fraction_fit,
-        fraction_eval=fraction_eval,
-        min_fit_clients=min_fit_clients,
-        min_eval_clients=min_eval_clients,
-        min_available_clients=min_available_clients)
+        super().__init__(min_available_clients=min_available_clients,
+        #fraction_fit=fraction_fit,
+        #fraction_eval=fraction_eval,
+        #min_fit_clients=min_fit_clients,
+        #min_eval_clients=min_eval_clients,
+        )
 
     def aggregate_fit(self, rnd, results, failures):
         """Aggregate fit results using weighted average for half of the clients."""
         
         log(INFO, 'Using Half Of Weights Strategy')
-        log(DEBUG, len(results))
+        #log(DEBUG, len(results))
 
         # Sample half of clients for aggregation
-        half_clients = random.sample(results, int(len(results)/2))
+        #half_clients = random.sample(results, int(len(results)/2))
 
-        log(DEBUG, len(half_clients))
-        return super().aggregate_fit(rnd, half_clients, failures)
+        #log(DEBUG, len(half_clients))
+        return super().aggregate_fit(rnd, results, failures)
 
 
