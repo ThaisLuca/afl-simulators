@@ -14,6 +14,7 @@ MIN_AVAILABLE_CLIENTS = 2
 
 def fit_round(rnd: int) -> Dict:
     """Send round number to client."""
+    print('fit_round', {"rnd": rnd})
     return {"rnd": rnd}
 
 
@@ -26,8 +27,8 @@ def get_eval_fn(model: LogisticRegression):
         utils.set_model_params(model, parameters)
         loss = log_loss(y_test, model.predict_proba(X_test))
         accuracy = model.score(X_test, y_test)
+        print('get_eval_fn ', loss, {"accuracy": accuracy})
         return loss, {"accuracy": accuracy}
-
     return evaluate
 
 
