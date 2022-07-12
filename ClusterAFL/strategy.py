@@ -1,4 +1,6 @@
 
+import math
+import random
 import flwr as fl
 import numpy as np
 
@@ -21,29 +23,26 @@ from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 
-#from .aggregate import aggregate, weighted_loss_avg
-#from .strategy import Strategy
-
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self,min_available_clients,eval_fn,on_fit_config_fn):
+    def __init__(self,fraction_fit,fraction_eval,min_fit_clients,min_eval_clients,min_available_clients):
 
-        super().__init__(min_available_clients=min_available_clients, 
-        eval_fn=eval_fn,
-        on_fit_config_fn=on_fit_config_fn)
+        super().__init__(fraction_fit=fraction_fit,
+        fraction_eval=fraction_eval,
+        min_fit_clients=min_fit_clients,
+        min_eval_clients=min_eval_clients,
+        min_available_clients=min_available_clients)
 
     def aggregate_fit(self, rnd, results, failures):
-        """Aggregate fit results using weighted average."""
+        """Aggregate fit results using weighted average for half of the clients."""
         
         log(INFO, 'Using Half Of Weights Strategy')
+        log(DEBUG, len(results))
 
-        if not results:
-            return None, {}
+        # Sample half of clients for aggregation
+        half_clients = random.sample(results, int(len(results)/2))
 
-        # Convert results
-        weights_results = [
-            (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
-            for _, fit_res in results
-        ]
+        log(DEBUG, len(half_clients))
+        return super().aggregate_fit(rnd, half_clients, failures)
 
-        parameters_aggregated = weights_to_parameters(super().aggregate(weights_results))
+
