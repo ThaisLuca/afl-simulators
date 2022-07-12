@@ -2,7 +2,7 @@
 import flwr as fl
 import numpy as np
 
-from logging import WARNING
+from logging import WARNING, INFO, DEBUG
 from typing import Callable, Dict, List, Optional, Tuple
 
 from flwr.common import (
@@ -26,48 +26,17 @@ from flwr.server.client_proxy import ClientProxy
 
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(
-        self,
-        fraction_fit: float = 0.1,
-        fraction_eval: float = 0.1,
-        min_fit_clients: int = 2,
-        min_eval_clients: int = 2,
-        min_available_clients: int = 2,
-        eval_fn: Optional[
-            Callable[[Weights], Optional[Tuple[float, Dict[str, Scalar]]]]
-        ] = None,
-        on_fit_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
-        on_evaluate_config_fn: Optional[Callable[[int], Dict[str, Scalar]]] = None,
-        accept_failures: bool = True,
-        initial_parameters: Optional[Parameters] = None,
-        fit_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-        evaluate_metrics_aggregation_fn: Optional[MetricsAggregationFn] = None,
-    ) -> None:
+    def __init__(self,min_available_clients,eval_fn,on_fit_config_fn):
 
-        super().__init__()
-
-        if (
-            min_fit_clients > min_available_clients
-            or min_eval_clients > min_available_clients
-        ):
-            log(WARNING, WARNING_MIN_AVAILABLE_CLIENTS_TOO_LOW)
-
-        self.fraction_fit = fraction_fit
-        self.fraction_eval = fraction_eval
-        self.min_fit_clients = min_fit_clients
-        self.min_eval_clients = min_eval_clients
-        self.min_available_clients = min_available_clients
-        self.eval_fn = eval_fn
-        self.on_fit_config_fn = on_fit_config_fn
-        self.on_evaluate_config_fn = on_evaluate_config_fn
-        self.accept_failures = accept_failures
-        self.initial_parameters = initial_parameters
-        self.fit_metrics_aggregation_fn = fit_metrics_aggregation_fn
-        self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
+        super().__init__(min_available_clients=min_available_clients, 
+        eval_fn=eval_fn,
+        on_fit_config_fn=on_fit_config_fn)
 
     def aggregate_fit(self, rnd, results, failures):
         """Aggregate fit results using weighted average."""
         
+        log(INFO, 'Using Half Of Weights Strategy')
+
         if not results:
             return None, {}
 
