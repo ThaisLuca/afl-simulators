@@ -21,8 +21,8 @@ from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 
-from .aggregate import aggregate, weighted_loss_avg
-from .strategy import Strategy
+#from .aggregate import aggregate, weighted_loss_avg
+#from .strategy import Strategy
 
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
@@ -65,32 +65,16 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
         self.fit_metrics_aggregation_fn = fit_metrics_aggregation_fn
         self.evaluate_metrics_aggregation_fn = evaluate_metrics_aggregation_fn
 
-    # def initialize_parameters(self, client_manager):
-    #     # Your implementation here
-
-    # def configure_fit(self, rnd, parameters, client_manager):
-    #     # Your implementation here
-
     def aggregate_fit(self, rnd, results, failures):
         """Aggregate fit results using weighted average."""
         
-        print(results)
         if not results:
             return None, {}
 
         # Convert results
         weights_results = [
-            (super().parameters_to_weights(fit_res.parameters), fit_res.num_examples)
+            (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
         ]
 
-        parameters_aggregated = super().weights_to_parameters(super().aggregate(weights_results))
-
-    # def configure_evaluate(self, rnd, parameters, client_manager):
-    #     # Your implementation here
-
-    # def aggregate_evaluate(self, rnd, results, failures):
-    #     # Your implementation here
-
-    # def evaluate(self, parameters):
-    #     # Your implementation here
+        parameters_aggregated = weights_to_parameters(super().aggregate(weights_results))
