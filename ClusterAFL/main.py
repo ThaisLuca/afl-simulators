@@ -1,6 +1,8 @@
 
+
+import os
+import math
 import utils
-import flwr as fl
 import numpy as np
 from typing import Dict
 from client import MnistClient
@@ -8,13 +10,22 @@ from sklearn.metrics import log_loss
 from strategy import HalfOfWeightsStrategy
 from sklearn.linear_model import LogisticRegression
 
-NUM_CLIENTS = 3
+# Make TensorFlow logs less verbose
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+import flwr as fl
+import tensorflow as tf
+
+NUM_CLIENTS = 10
 NUM_ROUNDS = 3
-MIN_AVAILABLE_CLIENTS = 2
+MIN_AVAILABLE_CLIENTS = int(NUM_CLIENTS * 0.75)   # Wait until at least 75 clients are available
+FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
+MIN_FIT_CLIENTS = 10                              # Never sample less than 10 clients for training
+FRACTION_EVAL = 0.05                              # Sample 5% of available clients for evaluation
+MIN_EVAL_CLIENTS = 5                              # Never sample less than 5 clients for evaluation
 
 def fit_round(rnd: int) -> Dict:
     """Send round number to client."""
-    print('fit_round', {"rnd": rnd})
     return {"rnd": rnd}
 
 
@@ -27,39 +38,47 @@ def get_eval_fn(model: LogisticRegression):
         utils.set_model_params(model, parameters)
         loss = log_loss(y_test, model.predict_proba(X_test))
         accuracy = model.score(X_test, y_test)
-        print('get_eval_fn ', loss, {"accuracy": accuracy})
         return loss, {"accuracy": accuracy}
     return evaluate
 
 
 def client_fn(cid: str) -> fl.client.Client:
 
-    # Load data partition (divide MNIST into NUM_CLIENTS distinct partitions)
-    (X_train, y_train), (X_test, y_test) = utils.load_mnist()
-
-    partition_id = np.random.choice(10)
-    (X_train, y_train) = utils.partition(X_train, y_train, 10)[partition_id]
-
-    # Create Model
-    model = LogisticRegression(
-    penalty="l2",
-    max_iter=1,  # local epoch
-    warm_start=True,  # prevent refreshing weights when fitting
+    # Create model
+    model = tf.keras.models.Sequential(
+        [
+            tf.keras.layers.Flatten(input_shape=(28, 28)),
+            tf.keras.layers.Dense(128, activation="relu"),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(10, activation="softmax"),
+        ]
     )
+    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
 
-    utils.set_initial_params(model)
+    # Load data partition (divide MNIST into NUM_CLIENTS distinct partitions)
+    (x_train, y_train), _ = tf.keras.datasets.mnist.load_data()
+    partition_size = math.floor(len(x_train) / NUM_CLIENTS)
+    idx_from, idx_to = int(cid) * partition_size, (int(cid) + 1) * partition_size
+    x_train_cid = x_train[idx_from:idx_to] / 255.0
+    y_train_cid = y_train[idx_from:idx_to]
+
+    # Use 10% of the client's training data for validation
+    split_idx = math.floor(len(x_train) * 0.9)
+    x_train_cid, y_train_cid = x_train_cid[:split_idx], y_train_cid[:split_idx]
+    x_val_cid, y_val_cid = x_train_cid[split_idx:], y_train_cid[split_idx:]
 
     # Create and return client
-    return MnistClient(model, X_train, y_train)
+    return MnistClient(model, x_train_cid, y_train_cid, x_val_cid, y_val_cid)
 
 # Start Flower server for five rounds of federated learning
 if __name__ == "__main__":
     model = LogisticRegression()
     utils.set_initial_params(model)
-    strategy = HalfOfWeightsStrategy(
-        min_available_clients=MIN_AVAILABLE_CLIENTS,
-        eval_fn=get_eval_fn(model),
-        on_fit_config_fn=fit_round,
+    strategy = HalfOfWeightsStrategy(fraction_fit=FRACTION_FIT,
+        fraction_eval=FRACTION_EVAL,
+        min_fit_clients=MIN_FIT_CLIENTS,
+        min_eval_clients=MIN_EVAL_CLIENTS,
+        min_available_clients=MIN_AVAILABLE_CLIENTS
     )
 
     # Start simulation
