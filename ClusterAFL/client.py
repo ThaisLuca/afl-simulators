@@ -6,6 +6,7 @@ import numpy as np
 
 class FlowerClient(fl.client.NumPyClient):
     def __init__(self, model, x_train, y_train, x_test, y_test) -> None:
+        super().__init__()
         self.model = model
         self.x_train, self.y_train = x_train, y_train
         self.x_test, self.y_test = x_test, y_test
