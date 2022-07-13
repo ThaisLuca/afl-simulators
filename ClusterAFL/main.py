@@ -37,12 +37,12 @@ def client_fn(cid: str) -> fl.client.Client:
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
     # Create and return client
-    return FlowerClient(model, x_train[:1000], y_train[:1000], x_test[1000:2000], y_test[1000:2000])
+    return FlowerClient(cid, model, x_train[:1000], y_train[:1000], x_test[1000:2000], y_test[1000:2000])
 
 # Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":
     #fl.server.strategy.FedAvg
-    strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
+    strategy = HalfOfWeightsStrategy(min_available_clients=MIN_AVAILABLE_CLIENTS,
         #on_fit_config_fn=fit_round,
         #fraction_fit=FRACTION_FIT,
         #fraction_eval=FRACTION_EVAL,
