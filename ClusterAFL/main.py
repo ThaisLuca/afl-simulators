@@ -2,7 +2,6 @@
 
 import os
 import math
-import utils
 import numpy as np
 from typing import Dict
 from client import FlowerClient
@@ -16,7 +15,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import flwr as fl
 import tensorflow as tf
 
-NUM_CLIENTS = 10
+NUM_CLIENTS = 100
 NUM_ROUNDS = 3
 MIN_AVAILABLE_CLIENTS = 2 # int(NUM_CLIENTS * 0.75)# Wait until at least 75 clients are available
 #FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
@@ -28,41 +27,23 @@ def fit_round(rnd: int) -> Dict:
     """Send round number to client."""
     return {"rnd": rnd}
 
-def get_eval_fn(model: LogisticRegression):
-    """Return an evaluation function for server-side evaluation."""
-
-    _, (X_test, y_test) = utils.load_mnist()
-
-    def evaluate(parameters: fl.common.Weights):
-        utils.set_model_params(model, parameters)
-        loss = log_loss(y_test, model.predict_proba(X_test))
-        accuracy = model.score(X_test, y_test)
-        return loss, {"accuracy": accuracy}
-    return evaluate
-
-
 def client_fn(cid: str) -> fl.client.Client:
 
     # Create model
-    model = tf.keras.models.Sequential()
-    model.add(tf.keras.layers.Dense(12, input_shape=(8,), activation='relu'))
-    model.add(tf.keras.layers.Dense(8, activation='relu'))
-    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-    
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
+    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
 
     # Load data partition (divide MNIST into NUM_CLIENTS distinct partitions)
     (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 
     # Create and return client
-    return FlowerClient(model, x_train, y_train, x_test, y_test)
+    return FlowerClient(model, x_train[:1000], y_train[:1000], x_test[1000:2000], y_test[1000:2000])
 
-# Start Flower server for five rounds of federated learning
+# Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":
-    model = LogisticRegression()
-    utils.set_initial_params(model)
+    #fl.server.strategy.FedAvg
     strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
-        on_fit_config_fn=fit_round,
+        #on_fit_config_fn=fit_round,
         #fraction_fit=FRACTION_FIT,
         #fraction_eval=FRACTION_EVAL,
         #min_fit_clients=MIN_FIT_CLIENTS,

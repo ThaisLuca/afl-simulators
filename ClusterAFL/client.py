@@ -1,5 +1,4 @@
 
-import utils
 import warnings
 import flwr as fl
 import numpy as np
