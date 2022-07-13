@@ -2,6 +2,7 @@
 import warnings
 import flwr as fl
 import numpy as np
+import tensorflow as tf
 
 class FlowerClient(fl.client.NumPyClient):
     def __init__(self, ID, model, x_train, y_train, x_test, y_test) -> None:
@@ -14,6 +15,7 @@ class FlowerClient(fl.client.NumPyClient):
     def get_parameters(self):
         return self.model.get_weights()
 
+    @tf.function(experimental_relax_shapes=True) 
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
         self.model.fit(self.x_train, self.y_train, epochs=1, batch_size=32, steps_per_epoch=3, verbose=2)
