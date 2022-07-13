@@ -33,23 +33,32 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
-        
-      log(INFO, 'Using Half Of Weights Strategy')
+
+      # # Convert results
+      # all_clients_weights_results = [
+      #     (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
+      #     for _, fit_res in results
+      # ]
 
       # Sample half of clients for aggregation
-      half_clients = random.sample(results, int(len(results)/2))
+      # half_clients = random.sample(results, int(len(results)/2))
+      half_clients = results[:int(len(results)/2)]
+
+      # # Convert results
+      # half_clients_weights_results = [
+      #     (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
+      #     for _, fit_res in half_clients
+      # ]
 
       return super().aggregate_fit(rnd, half_clients, failures)
-      
-      #return parameters_aggregated, metrics_aggregated
 
     def aggregate_evaluate(self, rnd, results, failures):
       """Aggregate evaluation results."""
 
       # Sample half of clients for aggregation
-      half_clients = random.sample(results, int(len(results)/2))
+      # half_clients = random.sample(results, int(len(results)/2))
+      half_clients = results[:int(len(results)/2)]
 
-      log(DEBUG, len(half_clients))
       return super().aggregate_evaluate(rnd, half_clients, failures)
 
 
@@ -67,13 +76,8 @@ class ClusterStrategy(fl.server.strategy.FedAvg):
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
         
-      log(INFO, 'Using Half Of Weights Strategy')
-      log(DEBUG, len(results))
+      
 
-      # Sample half of clients for aggregation
-      half_clients = random.sample(results, int(len(results)/2))
-
-      log(DEBUG, len(half_clients))
       return super().aggregate_fit(rnd, half_clients, failures)
 
     def aggregate_evaluate(self, rnd, results, failures):
