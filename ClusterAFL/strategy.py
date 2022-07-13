@@ -41,8 +41,8 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
       # ]
 
       # Sample half of clients for aggregation
-      # half_clients = random.sample(results, int(len(results)/2))
-      half_clients = results[:int(len(results)/2)]
+      # half_clients = random.sample(results, len(results)//2)
+      half_clients = results[:len(results)//2]
 
       # # Convert results
       # half_clients_weights_results = [
@@ -57,7 +57,7 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
       # Sample half of clients for aggregation
       # half_clients = random.sample(results, int(len(results)/2))
-      half_clients = results[:int(len(results)/2)]
+      half_clients = results[:len(results)//2]
 
       return super().aggregate_evaluate(rnd, half_clients, failures)
 
@@ -78,13 +78,13 @@ class ClusterStrategy(fl.server.strategy.FedAvg):
         
       
 
-      return super().aggregate_fit(rnd, half_clients, failures)
+      return super().aggregate_fit(rnd, results, failures)
 
     def aggregate_evaluate(self, rnd, results, failures):
       """Aggregate evaluation results."""
 
       # Sample half of clients for aggregation
-      half_clients = random.sample(results, int(len(results)/2))
+      half_clients = random.sample(results, len(results)//2)
 
       log(DEBUG, len(half_clients))
       return super().aggregate_evaluate(rnd, half_clients, failures)
