@@ -38,12 +38,12 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
         """Aggregate fit results using weighted average for half of the clients."""
         
         log(INFO, 'Using Half Of Weights Strategy')
-        #log(DEBUG, len(results))
+        log(DEBUG, len(results))
 
         # Sample half of clients for aggregation
-        #half_clients = random.sample(results, int(len(results)/2))
+        half_clients = random.sample(results, int(len(results)/2))
 
-        #log(DEBUG, len(half_clients))
+        log(DEBUG, len(half_clients))
         return super().aggregate_fit(rnd, results, failures)
 
 
