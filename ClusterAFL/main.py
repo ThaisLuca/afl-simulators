@@ -6,7 +6,7 @@ import numpy as np
 from typing import Dict
 from client import FlowerClient
 from sklearn.metrics import log_loss
-from strategy import HalfOfWeightsStrategy
+from strategy import HalfOfWeightsStrategy,ClusterStrategy
 from sklearn.linear_model import LogisticRegression
 
 # Make TensorFlow logs less verbose
@@ -42,7 +42,7 @@ def client_fn(cid: str) -> fl.client.Client:
 # Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":
     #fl.server.strategy.FedAvg
-    strategy = HalfOfWeightsStrategy(min_available_clients=MIN_AVAILABLE_CLIENTS,
+    strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
         #on_fit_config_fn=fit_round,
         #fraction_fit=FRACTION_FIT,
         #fraction_eval=FRACTION_EVAL,

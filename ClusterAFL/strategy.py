@@ -27,28 +27,16 @@ from flwr.server.client_proxy import ClientProxy
 
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self,min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
+    def __init__(self, min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
 
       super().__init__(min_available_clients=min_available_clients)
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
 
-      # # Convert results
-      # all_clients_weights_results = [
-      #     (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
-      #     for _, fit_res in results
-      # ]
-
       # Sample half of clients for aggregation
       # half_clients = random.sample(results, len(results)//2)
       half_clients = results[:len(results)//2]
-
-      # # Convert results
-      # half_clients_weights_results = [
-      #     (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
-      #     for _, fit_res in half_clients
-      # ]
 
       return super().aggregate_fit(rnd, half_clients, failures)
 
@@ -61,33 +49,33 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
       return super().aggregate_evaluate(rnd, half_clients, failures)
 
-
 class ClusterStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self,min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
+    def __init__(self, min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
 
-      super().__init__(min_available_clients=min_available_clients,
-      #fraction_fit=fraction_fit,
-      #fraction_eval=fraction_eval,
-      #min_fit_clients=min_fit_clients,
-      #min_eval_clients=min_eval_clients,
-      )
+      super().__init__(min_available_clients=min_available_clients)
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
-        
-      
 
+      log(DEBUG, 'Results size')
+      log(DEBUG, len(results))
+
+      # Convert results
+      weights_results = [
+          (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
+          for _, fit_res in results
+      ]
+
+      log(DEBUG, 'Weights size')
+      log(DEBUG, len(weights_results))
+        
       return super().aggregate_fit(rnd, results, failures)
 
     def aggregate_evaluate(self, rnd, results, failures):
       """Aggregate evaluation results."""
 
-      # Sample half of clients for aggregation
-      half_clients = random.sample(results, len(results)//2)
-
-      log(DEBUG, len(half_clients))
-      return super().aggregate_evaluate(rnd, half_clients, failures)
+      return super().aggregate_evaluate(rnd, results, failures)
 
 
 
