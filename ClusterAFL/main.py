@@ -39,10 +39,20 @@ def client_fn(cid: str) -> fl.client.Client:
     # Create and return client
     return FlowerClient(cid, model, x_train[:1000], y_train[:1000], x_test[1000:2000], y_test[1000:2000])
 
+# Define metric aggregation function
+def agg(metrics):
+    # Weigh accuracy of each client by number of examples used
+    accuracies = [m["accuracy"] * n for m, n in metrics]
+    examples = [n for _, n in metrics]
+
+    # Aggregate and return custom metric
+    return {"accuracy": sum(accuracies) / sum(examples)}
+
 # Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":
     #fl.server.strategy.FedAvg
     strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
+        evaluate_metrics_aggregation_fn=agg
         #on_fit_config_fn=fit_round,
         #fraction_fit=FRACTION_FIT,
         #fraction_eval=FRACTION_EVAL,

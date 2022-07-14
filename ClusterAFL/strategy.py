@@ -51,24 +51,25 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
 class ClusterStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self, min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
+    def __init__(self, min_available_clients):
 
       super().__init__(min_available_clients=min_available_clients)
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
 
-      log(DEBUG, 'Results size')
-      log(DEBUG, len(results))
-
       # Convert results
-      weights_results = [
+      X = [
           (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
           for _, fit_res in results
       ]
 
-      log(DEBUG, 'Weights size')
-      log(DEBUG, len(weights_results))
+      log(DEBUG, 'K-Means')
+      log(DEBUG, len(X))
+
+      kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
+      log(DEBUG, 'K-Means')
+      log(DEBUG, kmeans.labels_)
         
       return super().aggregate_fit(rnd, results, failures)
 
