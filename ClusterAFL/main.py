@@ -1,58 +1,82 @@
 
-
-import os
-import math
-import numpy as np
-from typing import Dict
-from client import FlowerClient
-from sklearn.metrics import log_loss
-from strategy import HalfOfWeightsStrategy,ClusterStrategy
-from sklearn.linear_model import LogisticRegression
-
-# Make TensorFlow logs less verbose
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+from collections import OrderedDict
+from typing import List
 
 import flwr as fl
-import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torchvision
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader, random_split
+from torchvision.datasets import CIFAR10
+
+from flwr.common.logger import log
+from client import FlowerClient, DEVICE
+from model import Net
 
 NUM_CLIENTS = 100
 NUM_ROUNDS = 3
+BATCH_SIZE = 32
 MIN_AVAILABLE_CLIENTS = 2 # int(NUM_CLIENTS * 0.75)# Wait until at least 75 clients are available
 #FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
 #MIN_FIT_CLIENTS = 10                              # Never sample less than 10 clients for training
 #FRACTION_EVAL = 0.05                              # Sample 5% of available clients for evaluation
 #MIN_EVAL_CLIENTS = 5                              # Never sample less than 5 clients for evaluation
 
-def fit_round(rnd: int) -> Dict:
+def fit_round(rnd: int):
     """Send round number to client."""
     return {"rnd": rnd}
 
-def client_fn(cid: str) -> fl.client.Client:
+def load_datasets():
+    # Download and transform CIFAR-10 (train and test)
+    transform = transforms.Compose(
+      [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    )
+    trainset = CIFAR10("./dataset", train=True, download=True, transform=transform)
+    testset = CIFAR10("./dataset", train=False, download=True, transform=transform)
+
+    # Split training set into 10 partitions to simulate the individual dataset
+    partition_size = len(trainset) // NUM_CLIENTS
+    lengths = [partition_size] * NUM_CLIENTS
+    datasets = random_split(trainset, lengths, torch.Generator().manual_seed(42))
+
+    # Split each partition into train/val and create DataLoader
+    trainloaders = []
+    valloaders = []
+    for ds in datasets:
+        len_val = len(ds) // 10  # 10 % validation set
+        len_train = len(ds) - len_val
+        lengths = [len_train, len_val]
+        ds_train, ds_val = random_split(ds, lengths, torch.Generator().manual_seed(42))
+        trainloaders.append(DataLoader(ds_train, batch_size=BATCH_SIZE, shuffle=True))
+        valloaders.append(DataLoader(ds_val, batch_size=BATCH_SIZE))
+    testloader = DataLoader(testset, batch_size=BATCH_SIZE)
+    return trainloaders, valloaders, testloader
+
+def client_fn(cid: str) -> FlowerClient:
 
     # Create model
-    model = tf.keras.applications.MobileNetV2((32, 32, 3), classes=10, weights=None)
-    model.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])
+    model = Net().to(DEVICE)
 
-    # Load data partition (divide MNIST into NUM_CLIENTS distinct partitions)
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+    # Load data (CIFAR-10)
+    trainloaders, valloaders, testloader = load_datasets()
 
-    # Create and return client
-    return FlowerClient(cid, model, x_train[:1000], y_train[:1000], x_test[1000:2000], y_test[1000:2000])
+    # Note: each client gets a different trainloader/valloader, so each client
+    # will train and evaluate on their own unique data
+    trainloader = trainloaders[int(cid)]
+    valloader = valloaders[int(cid)]
 
-# Define metric aggregation function
-def agg(metrics):
-    # Weigh accuracy of each client by number of examples used
-    accuracies = [m["accuracy"] * n for m, n in metrics]
-    examples = [n for _, n in metrics]
-
-    # Aggregate and return custom metric
-    return {"accuracy": sum(accuracies) / sum(examples)}
+    # Create a  single Flower client representing a single organization
+    return FlowerClient(cid, model, trainloader, valloader)
 
 # Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":
     #fl.server.strategy.FedAvg
     strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
-        evaluate_metrics_aggregation_fn=agg
+        #evaluate_metrics_aggregation_fn=agg
         #on_fit_config_fn=fit_round,
         #fraction_fit=FRACTION_FIT,
         #fraction_eval=FRACTION_EVAL,
