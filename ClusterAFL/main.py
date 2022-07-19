@@ -19,6 +19,9 @@ from client import FlowerClient
 from model import Net
 from utils import *
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 def fit_round(rnd: int):
     """Send round number to client."""
     return {"rnd": rnd}
