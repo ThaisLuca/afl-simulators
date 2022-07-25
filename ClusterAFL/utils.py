@@ -11,11 +11,13 @@ DEVICE = torch.device("cpu")
 NUM_CLIENTS = 100
 NUM_ROUNDS = 3
 BATCH_SIZE = 32
-MIN_AVAILABLE_CLIENTS = 2 # int(NUM_CLIENTS * 0.75)# Wait until at least 75 clients are available
-#FRACTION_FIT = 0.1                                # Sample 10% of available clients for training
-#MIN_FIT_CLIENTS = 10                              # Never sample less than 10 clients for training
-#FRACTION_EVAL = 0.05                              # Sample 5% of available clients for evaluation
-#MIN_EVAL_CLIENTS = 5                              # Never sample less than 5 clients for evaluation
+MIN_AVAILABLE_CLIENTS = int(NUM_CLIENTS * 0.80)    # Wait until at least 75 clients are available
+FRACTION_FIT = 0                                   # Sample 100% of available clients for training
+MIN_FIT_CLIENTS = 40                               # Never sample less than 50 clients for training
+FRACTION_EVAL = 1                                  # Sample 100% of available clients for evaluation
+MIN_EVAL_CLIENTS = 40                              # Never sample less than 50 clients for evaluation
+
+N_CLUSTERS = 4                                     # Number of clusters to split clients
 
 def train(net, trainloader, valloader, epochs: int, verbose=False):
   """Train the network on the training set."""

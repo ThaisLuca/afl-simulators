@@ -25,11 +25,16 @@ from flwr.common.logger import log
 from flwr.server.client_manager import ClientManager
 from flwr.server.client_proxy import ClientProxy
 
+from flwr.server.strategy.aggregate import weighted_loss_avg
+
 class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self, min_available_clients): #fraction_fit,fraction_eval,min_fit_clients,min_eval_clients):
+    def __init__(self, min_available_clients, on_evaluate_config_fn, eval_fn, fraction_fit, fraction_eval, min_fit_clients, min_eval_clients):
 
-      super().__init__(min_available_clients=min_available_clients)
+      super().__init__(min_available_clients=min_available_clients,
+        on_evaluate_config_fn=on_evaluate_config_fn, eval_fn=eval_fn,
+        fraction_fit=fraction_fit, fraction_eval=fraction_eval,
+        min_fit_clients=min_fit_clients, min_eval_clients=min_eval_clients)
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
@@ -38,53 +43,67 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
       # half_clients = random.sample(results, len(results)//2)
       half_clients = results[:len(results)//2]
 
+      log(DEBUG, 'Using half of clients')
+      log(DEBUG, len(half_clients))
+
       return super().aggregate_fit(rnd, half_clients, failures)
 
+    # def aggregate_evaluate(self, rnd, results, failures):
+    #   """Aggregate evaluation results."""
+
+    #   # Sample half of clients for aggregation
+    #   # half_clients = random.sample(results, int(len(results)/2))
+    #   half_clients = results[:len(results)//2]
+    #   return super().aggregate_evaluate(rnd, half_clients, failures)
+
     def aggregate_evaluate(self, rnd, results, failures):
-      """Aggregate evaluation results."""
+        """Aggregate evaluation losses using weighted average."""
+        if not results:
+            return None, {}
+        # Do not aggregate if there are failures and failures are not accepted
+        if not self.accept_failures and failures:
+            return None, {}
 
-      # Sample half of clients for aggregation
-      # half_clients = random.sample(results, int(len(results)/2))
-      half_clients = results[:len(results)//2]
+        half_clients = results[:len(results)//2]
+        log(DEBUG, 'Using half of clients')
+        log(DEBUG, len(half_clients))
 
-      return super().aggregate_evaluate(rnd, half_clients, failures)
-
-    # def aggregate_evaluate(
-    #     self,
-    #     rnd: int,
-    #     results: List[Tuple[ClientProxy, EvaluateRes]],
-    #     failures: List[BaseException],
-    # ) -> Optional[float]:
-    #     """Aggregate evaluation losses using weighted average."""
-    #     if not results:
-    #         return None
-
-    #     # Weigh accuracy of each client by number of examples used
-    #     accuracies = [r.metrics["accuracy"] * r.num_examples for _, r in results]
-    #     examples = [r.num_examples for _, r in results]
-
-    #     # Aggregate and print custom metric
-    #     accuracy_aggregated = sum(accuracies) / sum(examples)
-    #     print(f"Round {rnd} accuracy aggregated from client results: {accuracy_aggregated}")
-
-    #     # Call aggregate_evaluate from base class (FedAvg)
-    #     return super().aggregate_evaluate(rnd, results, failures)
+        loss_aggregated = weighted_loss_avg(
+            [
+                (
+                    evaluate_res.num_examples,
+                    evaluate_res.loss,
+                )
+                for _, evaluate_res in half_clients
+            ]
+        )
+        accuracy_aggregated = weighted_loss_avg(
+            [
+                (
+                    evaluate_res.num_examples,
+                    evaluate_res.metrics['accuracy'],
+                )
+                for _, evaluate_res in half_clients
+            ]
+        )
+        return loss_aggregated, {'accuracy': accuracy_aggregated}
 
 
 class ClusterStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self, min_available_clients):
+    def __init__(self, min_available_clients, on_evaluate_config_fn, eval_fn, fraction_fit, fraction_eval, min_fit_clients, min_eval_clients):
 
-      super().__init__(min_available_clients=min_available_clients)
+      super().__init__(min_available_clients=min_available_clients,
+        on_evaluate_config_fn=on_evaluate_config_fn, eval_fn=eval_fn,
+        fraction_fit=fraction_fit, fraction_eval=fraction_eval,
+        min_fit_clients=min_fit_clients, min_eval_clients=min_eval_clients)
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
 
       # Convert results
-      X = [
-          (parameters_to_weights(fit_res.parameters), fit_res.num_examples)
-          for _, fit_res in results
-      ]
+      X = [(parameters_to_weights(fit_res.parameters), fit_res.num_examples)
+          for _, fit_res in results]
 
       log(DEBUG, 'K-Means')
       log(DEBUG, len(X))

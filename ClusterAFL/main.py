@@ -19,6 +19,8 @@ from client import FlowerClient
 from model import Net
 from utils import *
 
+from strategy import HalfOfWeightsStrategy, ClusterStrategy
+
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -55,9 +57,8 @@ def get_eval_fn(model):
 
 def load_datasets():
     # Download and transform CIFAR-10 (train and test)
-    transform = transforms.Compose(
-      [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
+    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
     trainset = CIFAR10("./dataset", train=True, download=True, transform=transform)
     testset = CIFAR10("./dataset", train=False, download=True, transform=transform)
 
@@ -103,7 +104,11 @@ if __name__ == "__main__":
     model = Net().to(DEVICE)
 
     #fl.server.strategy.FedAvg
-    strategy = fl.server.strategy.FedAvg(min_available_clients=MIN_AVAILABLE_CLIENTS,
+    strategy = ClusterStrategy(min_available_clients=MIN_AVAILABLE_CLIENTS,
+        fraction_fit=FRACTION_FIT,
+        fraction_eval=FRACTION_EVAL,
+        min_fit_clients=MIN_FIT_CLIENTS,
+        min_eval_clients=MIN_EVAL_CLIENTS,
         on_evaluate_config_fn=evaluate_config,
         eval_fn=get_eval_fn(model),
         #evaluate_metrics_aggregation_fn=agg
