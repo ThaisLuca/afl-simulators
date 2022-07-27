@@ -1,9 +1,12 @@
 
 import math
+import utils
 import random
 import flwr as fl
 import numpy as np
 
+from collections.abc import Iterable
+from itertools import chain
 from sklearn.cluster import KMeans
 
 from logging import WARNING, INFO, DEBUG
@@ -101,12 +104,13 @@ class ClusterStrategy(fl.server.strategy.FedAvg):
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
 
-      # Convert results
-      X = [(parameters_to_weights(fit_res.parameters), fit_res.num_examples)
-          for _, fit_res in results]
+      # Convert results and flat weights
+      X = []
+      for _, fit_res in results:
+        X.append(utils.concatenate_arrays_recursive(parameters_to_weights(fit_res.parameters)))
 
-      log(DEBUG, 'K-Means')
-      log(DEBUG, len(X))
+      print('w[0]')
+      print(len(X))
 
       kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
       log(DEBUG, 'K-Means')
