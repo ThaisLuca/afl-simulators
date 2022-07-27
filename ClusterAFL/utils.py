@@ -1,8 +1,11 @@
 
 import torch
+import pickle
 
 from collections import OrderedDict
 from typing import List
+
+from collections.abc import Iterable
 
 import numpy as np
 
@@ -64,3 +67,23 @@ def set_parameters(model, parameters: List[np.ndarray]):
   params_dict = zip(model.state_dict().keys(), parameters)
   state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
   model.load_state_dict(state_dict, strict=True)
+
+
+def concatenate_arrays_recursive(element, result=[]):
+  if(isinstance(element, Iterable)):
+    for el in element:
+      result = concatenate_arrays_recursive(el)
+      return result
+  elif(not isinstance(element, Iterable)):
+    result.append(element)
+    return result
+  else:
+    return result
+
+def save_pickle_file(weights):
+  with open('weights.pkl', 'wb') as file:
+    pickle.dump(weights, file)
+
+def load_pickle_file():
+    with open('weights.pkl', 'rb') as file:
+        return pickle.load(file)
