@@ -7,7 +7,7 @@ import numpy as np
 from collections import OrderedDict
 from typing import List
 
-from utils import train, test
+from utils import train, test, EPOCHS
 
 class FlowerClient(fl.client.NumPyClient):
     def __init__(self, ID, model, trainloader, valloader, testloader):
@@ -27,10 +27,10 @@ class FlowerClient(fl.client.NumPyClient):
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        train(self.model, self.trainloader, self.valloader, epochs=1, verbose=True)
+        loss, accuracy = train(self.model, self.trainloader, self.valloader, epochs=EPOCHS, verbose=True)
         return self.get_parameters(), len(self.trainloader), {}
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.testloader)
-        return float(loss), len(self.testloader), {"accuracy": float(accuracy)}
+        loss, accuracy = test(self.model, self.valloader, 'evaluate local')
+        return float(loss), len(self.valloader), {"accuracy": float(accuracy)}

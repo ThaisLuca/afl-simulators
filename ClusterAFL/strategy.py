@@ -94,12 +94,15 @@ class HalfOfWeightsStrategy(fl.server.strategy.FedAvg):
 
 class ClusterStrategy(fl.server.strategy.FedAvg):
 
-    def __init__(self, min_available_clients, on_evaluate_config_fn, eval_fn, fraction_fit, fraction_eval, min_fit_clients, min_eval_clients):
+    def __init__(self, min_available_clients, on_evaluate_config_fn, eval_fn, fraction_fit, fraction_eval, min_fit_clients, min_eval_clients, n_clusters, random_state=0):
 
       super().__init__(min_available_clients=min_available_clients,
         on_evaluate_config_fn=on_evaluate_config_fn, eval_fn=eval_fn,
         fraction_fit=fraction_fit, fraction_eval=fraction_eval,
         min_fit_clients=min_fit_clients, min_eval_clients=min_eval_clients)
+
+      self.n_clusters = n_clusters
+      self.random_state = random_state
 
     def aggregate_fit(self, rnd, results, failures):
       """Aggregate fit results using weighted average for half of the clients."""
@@ -107,14 +110,16 @@ class ClusterStrategy(fl.server.strategy.FedAvg):
       # Convert results and flat weights
       X = []
       for _, fit_res in results:
-        X.append(utils.concatenate_arrays_recursive(parameters_to_weights(fit_res.parameters)))
+        X.append(utils.concatenate_arrays_recursive(parameters_to_weights(fit_res.parameters), result=[]))
 
-      print('w[0]')
-      print(len(X))
+      kmeans = KMeans(n_clusters=self.n_clusters, random_state=self.random_state).fit(X)
 
-      kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
-      log(DEBUG, 'K-Means')
-      log(DEBUG, kmeans.labels_)
+      clusters = []
+      for i in range(self.n_clusters):
+        clusters.append([])
+
+      for i in range(len(kmeans.labels_)):
+        clusters[kmeans.labels_[i]].append(results[i])
         
       return super().aggregate_fit(rnd, results, failures)
 

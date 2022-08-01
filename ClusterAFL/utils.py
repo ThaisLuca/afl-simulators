@@ -11,16 +11,18 @@ import numpy as np
 
 DEVICE = torch.device("cpu")
 
-NUM_CLIENTS = 100
+NUM_CLIENTS = 10
 NUM_ROUNDS = 3
 BATCH_SIZE = 32
 MIN_AVAILABLE_CLIENTS = int(NUM_CLIENTS * 0.80)    # Wait until at least 75 clients are available
 FRACTION_FIT = 0                                   # Sample 100% of available clients for training
-MIN_FIT_CLIENTS = 40                               # Never sample less than 50 clients for training
+MIN_FIT_CLIENTS = 2                               # Never sample less than 50 clients for training
 FRACTION_EVAL = 1                                  # Sample 100% of available clients for evaluation
-MIN_EVAL_CLIENTS = 40                              # Never sample less than 50 clients for evaluation
+MIN_EVAL_CLIENTS = 2                              # Never sample less than 50 clients for evaluation
 
-N_CLUSTERS = 4                                     # Number of clusters to split clients
+N_CLUSTERS = 2                                     # Number of clusters to split clients
+EPOCHS = 1                                         # Number of local rounds
+SEED = 42
 
 def train(net, trainloader, valloader, epochs: int, verbose=False):
   """Train the network on the training set."""
@@ -40,13 +42,18 @@ def train(net, trainloader, valloader, epochs: int, verbose=False):
           epoch_loss += loss
           total += labels.size(0)
           correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
-      epoch_loss /= len(valloader.dataset)
+      epoch_loss /= len(trainloader)
       epoch_acc = correct / total
       if verbose:
           print(f"Epoch {epoch+1}: train loss {epoch_loss}, accuracy {epoch_acc}")
+  return epoch_loss, epoch_acc
 
+  # if valloader is not None:
+  #   loss, accuracy = test(net, valloader)
+  #   if verbose:
+  #     print(f"Local round val loss {loss}, accuracy {accuracy}")
 
-def test(net, testloader):
+def test(net, testloader, message=''):
   """Evaluate the network on the entire test set."""
   criterion = torch.nn.CrossEntropyLoss()
   correct, total, loss = 0, 0, 0.0
@@ -59,7 +66,7 @@ def test(net, testloader):
           _, predicted = torch.max(outputs.data, 1)
           total += labels.size(0)
           correct += (predicted == labels).sum().item()
-  loss /= len(testloader.dataset)
+  loss /= len(testloader)
   accuracy = correct / total
   return loss, accuracy
 
@@ -68,12 +75,11 @@ def set_parameters(model, parameters: List[np.ndarray]):
   state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
   model.load_state_dict(state_dict, strict=True)
 
-
 def concatenate_arrays_recursive(element, result=[]):
   if(isinstance(element, Iterable)):
     for el in element:
-      result = concatenate_arrays_recursive(el)
-      return result
+      result = concatenate_arrays_recursive(el, result)
+    return result
   elif(not isinstance(element, Iterable)):
     result.append(element)
     return result
