@@ -10,12 +10,11 @@ from typing import List
 from utils import train, test, EPOCHS
 
 class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, ID, model, trainloader, valloader, testloader):
+    def __init__(self, ID, model, trainloader, valloader):
         self.ID = ID
         self.model = model
         self.trainloader = trainloader
         self.valloader = valloader
-        self.testloader = testloader
 
     def get_parameters(self) -> List[np.ndarray]:
       return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -32,5 +31,5 @@ class FlowerClient(fl.client.NumPyClient):
 
     def evaluate(self, parameters, config):
         self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.valloader, 'evaluate local')
+        loss, accuracy = test(self.model, self.valloader)
         return float(loss), len(self.valloader), {"accuracy": float(accuracy)}

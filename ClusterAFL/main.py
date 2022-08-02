@@ -55,7 +55,7 @@ def get_eval_fn(model):
   # The `evaluate` function will be called after every round
   def evaluate(weights: fl.common.Weights) -> Optional[Tuple[float, float]]:
     set_parameters(model, weights) # Update model with the latest parameters
-    loss, accuracy = test(model, servertestloader, 'evaluate central')
+    loss, accuracy = test(model, servertestloader)
     return float(loss), {"accuracy": float(accuracy)}
   return evaluate
 
@@ -73,7 +73,7 @@ def client_fn(cid: str) -> FlowerClient:
     valloader = valloaders[int(cid)]
 
     # Create a  single Flower client representing a single organization
-    return FlowerClient(cid, model, trainloader, valloader, testloader)
+    return FlowerClient(cid, model, trainloader, valloader)
 
 # Start Flower server for NUM_ROUNDS rounds of federated learning
 if __name__ == "__main__":

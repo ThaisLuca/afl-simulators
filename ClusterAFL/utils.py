@@ -53,7 +53,7 @@ def train(net, trainloader, valloader, epochs: int, verbose=False):
   #   if verbose:
   #     print(f"Local round val loss {loss}, accuracy {accuracy}")
 
-def test(net, testloader, message=''):
+def test(net, testloader):
   """Evaluate the network on the entire test set."""
   criterion = torch.nn.CrossEntropyLoss()
   correct, total, loss = 0, 0, 0.0
