@@ -124,9 +124,32 @@ class ClusterStrategy(fl.server.strategy.FedAvg):
       return super().aggregate_fit(rnd, results, failures)
 
     def aggregate_evaluate(self, rnd, results, failures):
-      """Aggregate evaluation results."""
+        """Aggregate evaluation losses using weighted average."""
+        if not results:
+            return None, {}
+        # Do not aggregate if there are failures and failures are not accepted
+        if not self.accept_failures and failures:
+            return None, {}
 
-      return super().aggregate_evaluate(rnd, results, failures)
+        loss_aggregated = weighted_loss_avg(
+            [
+                (
+                    evaluate_res.num_examples,
+                    evaluate_res.loss,
+                )
+                for _, evaluate_res in results
+            ]
+        )
+        accuracy_aggregated = weighted_loss_avg(
+            [
+                (
+                    evaluate_res.num_examples,
+                    evaluate_res.metrics['accuracy'],
+                )
+                for _, evaluate_res in results
+            ]
+        )
+        return loss_aggregated, {'accuracy': accuracy_aggregated}
 
 
 
