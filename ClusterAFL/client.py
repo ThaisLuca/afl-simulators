@@ -7,6 +7,8 @@ import numpy as np
 from collections import OrderedDict
 from typing import List
 
+from flwr.common.logger import log
+from logging import WARNING, INFO, DEBUG
 from utils import train, test, EPOCHS
 
 class FlowerClient(fl.client.NumPyClient):
@@ -16,10 +18,10 @@ class FlowerClient(fl.client.NumPyClient):
         self.trainloader = trainloader
         self.valloader = valloader
 
-    def get_parameters(self) -> List[np.ndarray]:
+    def get_parameters(self, config):
       return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
 
-    def set_parameters(self, parameters: List[np.ndarray]):
+    def set_parameters(self, parameters):
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
         self.model.load_state_dict(state_dict, strict=True)

@@ -6,7 +6,6 @@ from collections import OrderedDict
 from typing import List
 
 from collections.abc import Iterable
-
 import numpy as np
 
 DEVICE = torch.device("cpu")
@@ -16,11 +15,11 @@ NUM_ROUNDS = 3
 BATCH_SIZE = 32
 MIN_AVAILABLE_CLIENTS = int(NUM_CLIENTS * 0.80)    # Wait until at least 75 clients are available
 FRACTION_FIT = 0                                   # Sample 100% of available clients for training
-MIN_FIT_CLIENTS = 2                               # Never sample less than 50 clients for training
+MIN_FIT_CLIENTS = 2                                # Never sample less than 50 clients for training
 FRACTION_EVAL = 1                                  # Sample 100% of available clients for evaluation
-MIN_EVAL_CLIENTS = 2                              # Never sample less than 50 clients for evaluation
+MIN_EVAL_CLIENTS = 2                               # Never sample less than 50 clients for evaluation
 
-N_CLUSTERS = 2                                     # Number of clusters to split clients
+N_CLUSTERS = 1                                     # Number of clusters to split clients
 EPOCHS = 1                                         # Number of local rounds
 SEED = 42
 
@@ -70,10 +69,11 @@ def test(net, testloader):
   accuracy = correct / total
   return loss, accuracy
 
-def set_parameters(model, parameters: List[np.ndarray]):
-  params_dict = zip(model.state_dict().keys(), parameters)
-  state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-  model.load_state_dict(state_dict, strict=True)
+def set_parameters(model: torch.nn.ModuleList, params: List[np.ndarray]):
+    """Set model weights from a list of NumPy ndarrays."""
+    params_dict = zip(model.state_dict().keys(), params)
+    state_dict = OrderedDict({k: torch.from_numpy(np.copy(v)) for k, v in params_dict})
+    model.load_state_dict(state_dict, strict=True)
 
 def concatenate_arrays_recursive(element, result=[]):
   if(isinstance(element, Iterable)):
